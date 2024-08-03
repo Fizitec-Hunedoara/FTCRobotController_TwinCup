@@ -17,20 +17,19 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 
 @TeleOp
 public class TeleOP_clasic extends OpMode {
-    public Switch swish;
     public DcMotorEx motorBR,motorBL,motorFL,motorFR;
-    public DcMotorEx sliderR,sliderL,brat;
-    public Servo ghearaR,ghearaL,servodubios;
+    public DcMotorEx sliderR,sliderL,intake;
+    public Servo servointake, brat;
     public TouchSensor sliderTouch;
-    double sm = 1, lb = 1, rb = 1, sliderSlow = 1;
+    double sm = 1, lb = 1, rb = 1, sliderSlow = 1, intakePos = 0;
     double y, x, rx;
     double max = 0;
     double pmotorBL;
     double pmotorBR;
     double pmotorFL;
     double pmotorFR;
-    boolean stop = false, lastx = false, lasty = false, sliderState = true, aIntrat = false,aAjuns = true,aInchis = true;
-    double intPoz = 0.4, servoPos = 0.0;
+    boolean stop = false, lastx = false, lasty = false, intaked = true;
+    double servoPos = 0.5;
     /*Functia de init se ruleaza numai o data, se folosete pentru initializarea motoarelor si chestii :)*/
     @Override
     public void init() {
@@ -42,11 +41,18 @@ public class TeleOP_clasic extends OpMode {
 
         sliderL = hardwareMap.get(DcMotorEx.class,"sliderL");
         sliderR = hardwareMap.get(DcMotorEx.class,"sliderR");
+
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        servointake = hardwareMap.get(Servo.class, "servointake");
+        brat = hardwareMap.get(Servo.class, "brat");
         /*Liniile astea de cod fac ca motoarele sa aiba puterea inversata fata de cum erau initial,
         sunt fol++osite pentru a face robotul sa mearga in fata dand putere pozitiva la toate cele 4 motoare. */
         motorBL.setDirection(DcMotorEx.Direction.REVERSE);
         motorFL.setDirection(DcMotorEx.Direction.REVERSE);
+
         sliderL.setDirection(DcMotorEx.Direction.REVERSE);
+
+        intake.setDirection(DcMotorEx.Direction.REVERSE);
 
         /*Liniile astea de cod fac ca motoarele sa poata frana de tot atunci cand ii dai sa franeze*/
         motorBL.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
@@ -57,14 +63,12 @@ public class TeleOP_clasic extends OpMode {
         sliderR.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         sliderL.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
 
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         /*Liniile astea de cod fac ca encoderele(masoara cat a mers motorul, dar nu este foarte precis, este necesar un cablu ca sa accesezi encoder-ul) sa se opreaca si sa se reseteze la valoarea initiala*/
-        motorFR.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        motorFL.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        motorBR.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        motorBL.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-
         sliderL.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         sliderR.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+
+        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         /*Liniile astea de cod fac ca robotul sa mearga cu ajutorul encoderelor(maresc precizia)*/
         motorFR.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         motorFL.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
@@ -73,6 +77,8 @@ public class TeleOP_clasic extends OpMode {
 
         sliderL.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         sliderR.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+        intake.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
     }
     public void start(){
         Chassis.start();
@@ -147,6 +153,35 @@ public class TeleOP_clasic extends OpMode {
             while (!stop) {
                 sliderL.setPower(gamepad2.left_stick_y);
                 sliderR.setPower(gamepad2.left_stick_y);
+                if(gamepad2.a){
+                    if(intaked){
+                        intaked = false;
+                        intakePos = 1-intakePos;
+                    }
+                    if(intakePos == 1) {
+                        intake.setPower(1);
+                    }
+                    else{
+                        intake.setPower(-1);
+                    }
+                    intaked = true;
+                }
+                else if(gamepad2.b){
+                    intake.setPower(0);
+                }
+                if(gamepad2.dpad_down && servoPos > 0){
+                    servoPos -= 0.004;
+                }
+                if(gamepad2.dpad_up && servoPos < 1){
+                    servoPos += 0.004;
+                }
+                brat.setPosition(servoPos);
+                if(gamepad2.y){
+                    servointake.setPosition(0.394);
+                }
+                if(gamepad2.x){
+                    servointake.setPosition(0.675);
+                }
             }
         }
     });
@@ -160,6 +195,7 @@ public class TeleOP_clasic extends OpMode {
         /*Exemplu de telemetrie, in care Hotel este scrisul dinainte, si trivago este valoarea, care este un string cu numele trivago :)))))*/
         telemetry.addData("sliderL:",sliderL.getCurrentPosition());
         telemetry.addData("sliderR:",sliderR.getCurrentPosition());
+        telemetry.addData("brat:",servoPos);
         //telemetry.addData("switch:",swish.getMeasuredState());
         /*Aceasta functie face ca telemetria sa trimita date cat timp ruleaza programul*/
         telemetry.update();
