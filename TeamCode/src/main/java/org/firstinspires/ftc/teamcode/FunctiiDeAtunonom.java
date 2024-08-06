@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import static java.lang.Math.abs;
 
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -12,6 +13,7 @@ public class FunctiiDeAtunonom {
     public DcMotorEx sliderR,sliderL,intake;
     public Servo servointake, brat_stanga, brat_dreapta, gheara_stanga, gheara_dreapta, incheietura,rotitor;
     public boolean isStopRequested = false;
+    public ColorSensor colorDreapta,colorStanga;
     public void initSisteme(HardwareMap hard){
         sliderL = hard.get(DcMotorEx.class,"sliderL");
         sliderR = hard.get(DcMotorEx.class,"sliderR");
@@ -25,6 +27,9 @@ public class FunctiiDeAtunonom {
         gheara_stanga = hard.get(Servo.class, "gheara_stanga");
         incheietura = hard.get(Servo.class, "incheietura");
         rotitor = hard.get(Servo.class, "rotitor");
+
+        colorDreapta = hard.get(ColorSensor.class,"colorDreapta");
+        colorStanga = hard.get(ColorSensor.class,"colorStanga");
 
         sliderL.setDirection(DcMotorEx.Direction.REVERSE);
 
@@ -62,10 +67,10 @@ public class FunctiiDeAtunonom {
         brat_dreapta.setPosition(1);
     }
     public void pixelIncheietura(){
-        incheietura.setPosition(0.8);
+        incheietura.setPosition(1);
     }
     public void tablaIncheietura(){
-        incheietura.setPosition(0);
+        incheietura.setPosition(0.5);
     }
     public void rotitorStanga(){
         rotitor.setPosition(1);
@@ -74,7 +79,7 @@ public class FunctiiDeAtunonom {
         rotitor.setPosition(0.748);
     }
     public void rotitorMijloc(){
-        rotitor.setPosition(0.873);
+        rotitor.setPosition(0.85);
     }
     public synchronized void target(double poz, double vel, DcMotorEx motor, double t, int tolerance) {
         if (motor.getCurrentPosition() < poz) {
@@ -106,5 +111,15 @@ public class FunctiiDeAtunonom {
         }
         sliderL.setVelocity(0);
         sliderR.setVelocity(0);
+    }
+    public void kdf(long t){
+        long lastTime = System.currentTimeMillis();
+        while(lastTime + t > System.currentTimeMillis() && !isStopRequested);
+    }
+    public boolean detect_right(){
+        return colorDreapta.red() > 1000 || colorDreapta.blue() > 1000 || colorDreapta.green() > 1000;
+    }
+    public boolean detect_left(){
+        return colorStanga.red() > 1000 || colorStanga.blue() > 1000 || colorStanga.green() > 1000;
     }
 }

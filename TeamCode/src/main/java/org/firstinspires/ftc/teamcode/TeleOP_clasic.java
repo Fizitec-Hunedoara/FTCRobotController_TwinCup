@@ -20,21 +20,22 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
-@TeleOp
+import org.firstinspires.ftc.teamcode.util.Encoder;
+
+ @TeleOp
 public class TeleOP_clasic extends OpMode {
     public DcMotorEx motorBR,motorBL,motorFL,motorFR;
-    public DcMotorEx sliderR,sliderL,intake;
-    public Servo servointake, brat_stanga, brat_dreapta, gheara_stanga, gheara_dreapta, incheietura;
-    public TouchSensor sliderTouch;
-    double sm = 1, lb = 1, rb = 1, sliderSlow = 1, intakePos = 0;
+    public Encoder leftEncoder,rightEncoder,frontEncoder;
+    double sm = 1, lb = 1, rb = 1, sliderSlow = 1, intakePos = 0, rotitorPoz = 3, incheieturaPoz = 1;
     double y, x, rx;
     double max = 0;
     double pmotorBL;
     double pmotorBR;
     double pmotorFL;
     double pmotorFR;
-    boolean stop = false, lastx = false, lasty = false, intaked = true, gherutaL = false, gherutaR = false, lastBumperL, lastBumperR, setSetpoint = true, automatizare = false;
-    double servoPos = 0, pidResult = 0;
+    boolean stop = false, lastx = false, lasty = false, intaked = true, gherutaL = false, gherutaR = false, lastBumperL, lastBumperR, setSetpoint = true, automatizare = false, started_left = false, started_right = false,closed_left = false, closed_right = false;
+    double servoPos = 0, servoPos2 = 0.85, pidResult = 0;
+    long lastTime,lastTimeR,lastTimeL;
     Pid_Controller_Adevarat pid = new Pid_Controller_Adevarat(pslider,islider,dslider);
     FunctiiDeAtunonom c = new FunctiiDeAtunonom();
     /*Functia de init se ruleaza numai o data, se folosete pentru initializarea motoarelor si chestii :)*/
@@ -42,6 +43,9 @@ public class TeleOP_clasic extends OpMode {
     public void init() {
         c.initSisteme(hardwareMap);
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
+        leftEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "motorFL"));
+        rightEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "motorFR"));
+        frontEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "motorBL"));
         /* Liniile astea de cod fac ca motoarele sa corespunda cu cele din configuratie, cu numele dintre ghilimele.*/
         motorBL = hardwareMap.get(DcMotorEx.class, "motorBL"); // Motor Back-Left
         motorBR = hardwareMap.get(DcMotorEx.class, "motorBR"); // Motor Back-Left
@@ -51,6 +55,7 @@ public class TeleOP_clasic extends OpMode {
         sunt fol++osite pentru a face robotul sa mearga in fata dand putere pozitiva la toate cele 4 motoare. */
         motorBL.setDirection(DcMotorEx.Direction.REVERSE);
         motorFL.setDirection(DcMotorEx.Direction.REVERSE);
+        rightEncoder.setDirection(Encoder.Direction.REVERSE);
 
         /*Liniile astea de cod fac ca motoarele sa poata frana de tot atunci cand ii dai sa franeze*/
         motorBL.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
@@ -143,34 +148,27 @@ public class TeleOP_clasic extends OpMode {
 //                if(gamepad2.right_stick_y > 0){
 //                    c.tablaIncheietura();
 //                }
-                if(gamepad2.a){
-                    if(intaked){
-                        intaked = false;
-                        intakePos = 1-intakePos;
-                    }
-                    if(intakePos == 1) {
-                        c.intake.setPower(1);
-                    }
-                    else{
-                        c.intake.setPower(-1);
-                    }
-                    intaked = true;
+                if(gamepad2.a && gamepad2.dpad_down){
+                    c.intake.setPower(1);
                 }
-                else if(gamepad2.b){
+                else if(gamepad2.b && gamepad2.dpad_down){
                     c.intake.setPower(0);
                 }
-                if(gamepad2.dpad_down && servoPos > 0){
-                    servoPos -= 0.001;
-                    c.brat_stanga.setPosition(servoPos);
-                    c.brat_dreapta.setPosition(1 - servoPos);
+                else if(gamepad2.b){
+                    double intakepow = -c.intake.getPower();
+                    c.intake.setPower(intakepow);
                 }
-                if(gamepad2.dpad_up && servoPos < 1){
-                    servoPos += 0.001;
-                    c.brat_stanga.setPosition(servoPos);
-                    c.brat_dreapta.setPosition(1 - servoPos);
+                else if(gamepad2.a){
+                    c.servointake.setPosition(0.675);
                 }
-                if(gamepad2.right_trigger > 0){
-                    servoPos = 0.47;
+                if(gamepad2.y){
+                    c.servointake.setPosition(0.394);
+                }
+                if(gamepad2.x){
+                    c.servointake.setPosition(0.57);
+                }
+               if(gamepad2.right_trigger > 0){
+                    servoPos = 0.7;
                     automatizare = true;
                     c.slider_target(-300,1000,3000,5);
                     automatizare = false;
@@ -178,52 +176,87 @@ public class TeleOP_clasic extends OpMode {
                     c.brat_stanga.setPosition(servoPos);
                     c.brat_dreapta.setPosition(1 - servoPos);
                     c.tablaIncheietura();
+                    incheieturaPoz = 2;
                 }
                 if(gamepad2.left_trigger > 0){
-                    servoPos = 0;
+                    automatizare = true;
+                    servoPos = 0.4;
+                    rotitorPoz = 3;
+                    c.rotitorMijloc();
                     c.pixelIncheietura();
+                    incheieturaPoz = 1;
+                    c.slider_target(0,1000,3000,5);
                     c.brat_stanga.setPosition(servoPos);
                     c.brat_dreapta.setPosition(1 - servoPos);
-                    automatizare = true;
-                    c.slider_target(0,1000,3000,5);
+                    lastTime = System.currentTimeMillis();
+                }
+                if(automatizare && lastTime + 800 < System.currentTimeMillis()){
+                    servoPos = 0;
+                    c.brat_stanga.setPosition(servoPos);
+                    c.brat_dreapta.setPosition(1 - servoPos);
                     automatizare = false;
                 }
-
-                if(gamepad2.y){
-                    c.servointake.setPosition(0.394);
+                /*if(gamepad2.left_trigger > 0 && servoPos2 > 0){
+                    servoPos2-=0.001;
                 }
-                if(gamepad2.x){
-                    c.servointake.setPosition(0.675);
+                if(gamepad2.right_trigger > 0 && servoPos2 < 1){
+                    servoPos2+=0.001;
                 }
+                c.rotitor.setPosition(servoPos2);*/
 
-                if(gamepad2.left_bumper && !lastBumperL){
-                    gherutaL = !gherutaL;
-                    if(gherutaL){
-                        c.gheara_stanga.setPosition(1);
+                if(gamepad2.right_bumper){
+                    c.gheara_stanga.setPosition(0.6);
+                    started_left = false;
+                }
+                else if(gamepad2.left_bumper){
+                    c.gheara_dreapta.setPosition(0.72);
+                    started_right = false;
+                }
+                else{
+                    if(!started_left && c.detect_left() && c.brat_stanga.getPosition() < 0.1){
+                        lastTimeL = System.currentTimeMillis();
+                        started_left = true;
+                        closed_left = false;
                     }
-                    else{
-                        c.gheara_stanga.setPosition(0.6);
+                    if(lastTimeL + 500 <= System.currentTimeMillis() && !closed_left){
+                        c.gheara_stanga.setPosition(1);
+                        closed_left = true;
+                    }
+                    if(!started_right && c.detect_right() && c.brat_stanga.getPosition() < 0.1) {
+                        lastTimeR = System.currentTimeMillis();
+                        started_right = true;
+                        closed_right = false;
+                    }
+                    if (lastTimeR + 500 <= System.currentTimeMillis() && !closed_right) {
+                        c.gheara_dreapta.setPosition(0.65);
+                        closed_right = true;
                     }
                 }
                 lastBumperL = gamepad2.left_bumper;
-                if(gamepad2.right_bumper && !lastBumperR){
-                    gherutaR = !gherutaR;
-                    if(gherutaR){
-                        c.gheara_dreapta.setPosition(0.65);
-                    }
-                    else{
-                        c.gheara_dreapta.setPosition(0.72);
-                    }
-                }
                 lastBumperR = gamepad2.right_bumper;
                 if(gamepad2.dpad_left){
-                    c.rotitorStanga();
+                    rotitorPoz = 1;
                 }
                 if(gamepad2.dpad_right){
-                    c.rotitorDreapta();
+                    rotitorPoz = 2;
                 }
                 if(gamepad2.dpad_up){
+                    rotitorPoz = 3;
+                }
+                if(rotitorPoz == 1){
+                    c.rotitorStanga();
+                }
+                else if(rotitorPoz == 2){
+                    c.rotitorDreapta();
+                }
+                else{
                     c.rotitorMijloc();
+                }
+                if(incheieturaPoz == 1){
+                    c.pixelIncheietura();
+                }
+                else{
+                    c.tablaIncheietura();
                 }
             }
         }
@@ -274,6 +307,15 @@ public class TeleOP_clasic extends OpMode {
         telemetry.addData("brat_dreapta:",c.brat_dreapta.getPosition());
         telemetry.addData("error:",pid.getError());
         telemetry.addData("setpoint:",pid.getSetpoint());
+        telemetry.addData("color sensor right blue:",c.colorDreapta.blue());
+        telemetry.addData("color sensor right red:",c.colorDreapta.red());
+        telemetry.addData("color sensor right green:",c.colorDreapta.green());
+        telemetry.addData("color sensor left blue:",c.colorStanga.blue());
+        telemetry.addData("color sensor left red:",c.colorStanga.red());
+        telemetry.addData("color sensor left green:",c.colorStanga.green());
+        telemetry.addData("encoder right:",rightEncoder.getCurrentPosition());
+        telemetry.addData("encoder left:",leftEncoder.getCurrentPosition());
+        telemetry.addData("encoder front:",frontEncoder.getCurrentPosition());
         //telemetry.addData("switch:",swish.getMeasuredState());
         /*Aceasta functie face ca telemetria sa trimita date cat timp ruleaza programul*/
         telemetry.update();
