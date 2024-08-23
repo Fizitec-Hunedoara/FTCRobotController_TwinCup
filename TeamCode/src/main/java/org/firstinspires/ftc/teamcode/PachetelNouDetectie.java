@@ -43,6 +43,7 @@ public class PachetelNouDetectie extends OpenCvPipeline {
         //aceasta linie de cod face un dreptunghi cat webcam-ul de mare si negru
         Mat rect = new Mat();
         Mat input = new Mat(in.rows(),in.cols(), CV_8UC1,Scalar.all(0));
+
         /*
          * IMPORTANT NOTE: the input Mat that is passed in as a parameter to this method
          * will only dereference to the same image for the duration of this particular
@@ -126,7 +127,7 @@ public class PachetelNouDetectie extends OpenCvPipeline {
             //deseneaza toate contururile, con
             // tourldx=-1 inseamna ca sunt desenate TOATE contururile
             Imgproc.drawContours(input, contours, -1, new Scalar(0, 255, 0), 4);
-            //aici se deseneaza dreeptunghiul care stabileste aria de detectare
+            //aici se deseneaza dreptunghiul care stabileste aria de detectare
             Imgproc.rectangle(
                     input,
                     new Point(CV_rect_x1, CV_rect_y1),

@@ -20,12 +20,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
-import org.firstinspires.ftc.teamcode.util.Encoder;
-
  @TeleOp
 public class TeleOP_clasic extends OpMode {
     public DcMotorEx motorBR,motorBL,motorFL,motorFR;
-    public Encoder leftEncoder,rightEncoder,frontEncoder;
     double sm = 1, lb = 1, rb = 1, sliderSlow = 1, intakePos = 0, rotitorPoz = 3, incheieturaPoz = 1;
     double y, x, rx;
     double max = 0;
@@ -43,9 +40,6 @@ public class TeleOP_clasic extends OpMode {
     public void init() {
         c.initSisteme(hardwareMap);
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
-        leftEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "motorFL"));
-        rightEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "motorFR"));
-        frontEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "motorBL"));
         /* Liniile astea de cod fac ca motoarele sa corespunda cu cele din configuratie, cu numele dintre ghilimele.*/
         motorBL = hardwareMap.get(DcMotorEx.class, "motorBL"); // Motor Back-Left
         motorBR = hardwareMap.get(DcMotorEx.class, "motorBR"); // Motor Back-Left
@@ -55,8 +49,6 @@ public class TeleOP_clasic extends OpMode {
         sunt fol++osite pentru a face robotul sa mearga in fata dand putere pozitiva la toate cele 4 motoare. */
         motorBL.setDirection(DcMotorEx.Direction.REVERSE);
         motorFL.setDirection(DcMotorEx.Direction.REVERSE);
-        rightEncoder.setDirection(Encoder.Direction.REVERSE);
-
         /*Liniile astea de cod fac ca motoarele sa poata frana de tot atunci cand ii dai sa franeze*/
         motorBL.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         motorBR.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
@@ -313,9 +305,6 @@ public class TeleOP_clasic extends OpMode {
         telemetry.addData("color sensor left blue:",c.colorStanga.blue());
         telemetry.addData("color sensor left red:",c.colorStanga.red());
         telemetry.addData("color sensor left green:",c.colorStanga.green());
-        telemetry.addData("encoder right:",rightEncoder.getCurrentPosition());
-        telemetry.addData("encoder left:",leftEncoder.getCurrentPosition());
-        telemetry.addData("encoder front:",frontEncoder.getCurrentPosition());
         //telemetry.addData("switch:",swish.getMeasuredState());
         /*Aceasta functie face ca telemetria sa trimita date cat timp ruleaza programul*/
         telemetry.update();
